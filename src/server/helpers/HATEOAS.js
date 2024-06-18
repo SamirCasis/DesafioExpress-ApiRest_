@@ -1,5 +1,5 @@
 const generateHATEOAS = (resource, items) => {
-  const limitedItems = items.slice(0, 2).map((element) => {
+  const limitedItems = items.map((element) => {
     return {
       name: element.name,
       href: `http://localhost:3000/joyas/${resource}/${element.id}`

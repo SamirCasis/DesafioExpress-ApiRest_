@@ -1,25 +1,30 @@
 import format from 'pg-format'
 import linkDB from '../db/dBLink.js'
 
-const jewelsHateoas = async ({limit = 2}) => {
-  const jewelsData = await pool.query('SELECT * FROM inventario LIMIT $1', [limit])
+const jewelsHateoas = async ({ limit = 2, page = 0, order_by = 'stock_DESC' }) => {
+  const [column, sort] = order_by.split('_')
+  const offset = page * limit
+  const query = format('SELECT * FROM inventario ORDER BY %s %s LIMIT %L OFFSET %L', column, sort, limit, offset)
+  const jewelsData = await linkDB(query)
   return jewelsData.rows
 }
 
 const jewelsFilter = ({
-  limits = 2,
+  limit = 2,
   order_by: orderBy = 'id_asc',
   page = 0,
-  stock_min: stockMin,
-  precio_max: precioMax
+  precio_min: precioMin,
+  precio_max: precioMax,
+  categoria,
+  metal
 }) => {
   let consulta = 'SELECT * FROM inventario'
   const filters = []
   const values = []
 
-  if (stockMin) {
-    values.push(stockMin)
-    filters.push(`stock >= $${values.length}`)
+  if (precioMin) {
+    values.push(precioMin)
+    filters.push(`precio >= $${values.length}`)
   }
 
   if (precioMax) {
@@ -27,18 +32,25 @@ const jewelsFilter = ({
     filters.push(`precio <= $${values.length}`)
   }
 
+  if (categoria) {
+    values.push(categoria)
+    filters.push(`categoria = $${values.length}`)
+  }
+
+  if (metal) {
+    values.push(metal)
+    filters.push(`metal = $${values.length}`)
+  }
+
   if (filters.length > 0) {
     consulta += ` WHERE ${filters.join(' AND ')}`
   }
 
-  console.log(consulta)
-
   const [column, sort] = orderBy.split('_')
-  const offSet = Math.abs(+page !== 0 ? page - 1 : 0) * limits
-  const formatConsulta = format(`${consulta} ORDER BY %s %s LIMITS %s OFFSET %s;`, column, sort, limits, offSet)
+  const offset = page * limit
+  const formatConsulta = format(`${consulta} ORDER BY %s %s LIMIT %L OFFSET %L`, column, sort, limit, offset)
   return linkDB(formatConsulta, values)
 }
 
-
-
 export { jewelsFilter, jewelsHateoas }
+

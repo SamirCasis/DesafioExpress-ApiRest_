@@ -1,6 +1,19 @@
 import generateHATEOAS from '../helpers/HATEOAS.js'
 import { jewelsHateoas, jewelsFilter } from '../models/jewels.model.js'
 
+const jewelsHateoasRes = async (req, res) => {
+  try {
+    const allJewels = await jewelsHateoas(req.query)
+    const allJewelsHateoas = await generateHATEOAS('jewels', allJewels)
+    res.status(200).json({ jewels: allJewelsHateoas })
+  } catch (error) {
+    const errorFound = findError(error.code)
+    return res
+      .status(errorFound[0].status)
+      .json({ error: errorFound[0].message })
+  }
+}
+
 const viewJewels = async (req, res) => {
   try {
     const {
@@ -11,7 +24,7 @@ const viewJewels = async (req, res) => {
       precio_max: precioMax
     } = req.query
     const jewels = await jewelsFilter({
-      limits: limit,
+      limit,
       page,
       order_by: orderBy,
       stock_min: stockMin,
@@ -20,19 +33,6 @@ const viewJewels = async (req, res) => {
     res.status(200).json(jewels)
   } catch (error) {
     res.status(500).json({ message: 'Error al obtener joyas' })
-  }
-}
-
-const jewelsHateoasRes = async (req, res) => {
-  try {
-    const allJewels = await jewelsHateoas()
-    const allJewelsHateoas = await generateHATEOAS('jewels', allJewels)
-    res.status(200).json({ jewels: allJewelsHateoas })
-  } catch (error) {
-    const errorFound = findError(error.code)
-    return res
-      .status(errorFound[0].status)
-      .json({ error: errorFound[0].message})
   }
 }
 

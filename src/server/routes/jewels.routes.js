@@ -3,7 +3,8 @@ import { viewJewels, jewelsHateoasRes } from '../controllers/jewels.controllers.
 
 const router = Router()
 
-router.get('/joyas', viewJewels)
-router.get('/joyas/filtro', jewelsHateoasRes)
+router.get('/joyas', jewelsHateoasRes)
+router.get('/joyas/filtros', viewJewels)
+
 
 export default router

@@ -10,7 +10,7 @@ app.use(cors())
 app.use(express.json())
 app.use(serverLog)
 
-app.use('/jewels', jewelsRoutes)
+app.use('/', jewelsRoutes)
 
 app.listen(PORT, () => console.log(`Server ON -> http://localhost:${PORT}`))
 
