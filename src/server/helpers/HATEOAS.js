@@ -1,7 +1,9 @@
 const generateHATEOAS = (resource, items) => {
+  let stockTotal = 0
   const limitedItems = items.map((element) => {
+    stockTotal = stockTotal + element.stock
     return {
-      name: element.name,
+      name: element.nombre,
       href: `http://localhost:3000/joyas/${resource}/${element.id}`
     }
   })
@@ -11,6 +13,7 @@ const generateHATEOAS = (resource, items) => {
   const itemCount = items.length
   const hateoasResponse = {
     total: itemCount,
+    stockTotal,
     results: limitedItems
   }
 

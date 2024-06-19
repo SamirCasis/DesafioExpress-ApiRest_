@@ -1,43 +1,26 @@
+import { jewelsData, jewelsDataFilters } from '../models/jewels.model.js'
 import generateHATEOAS from '../helpers/HATEOAS.js'
-import { jewelsHateoas, jewelsFilter } from '../models/jewels.model.js'
 
-const jewelsHateoasRes = async (req, res) => {
+const jewelsList = async (req, res) => {
   try {
-    const allJewels = await jewelsHateoas(req.query)
-    const allJewelsHateoas = await generateHATEOAS('jewels', allJewels)
-    res.status(200).json({ jewels: allJewelsHateoas })
+    const { limits, order_by, page } = req.query
+    const jewels = await jewelsData({ limits, order_by, page })
+    const hateoas = await generateHATEOAS('joya', jewels)
+    res.status(200).json(hateoas)
   } catch (error) {
-    const errorFound = findError(error.code)
-    return res
-      .status(errorFound[0].status)
-      .json({ error: errorFound[0].message })
+    console.error('Error retrieving joyas:', error)
+    res.status(500).json({ message: 'Internal server error' })
   }
 }
 
-const viewJewels = async (req, res) => {
+const jewelsListFilters = async (req, res) => {
   try {
-    const {
-      limit,
-      page,
-      order_by: orderBy,
-      stock_min: stockMin,
-      precio_max: precioMax
-    } = req.query
-    const jewels = await jewelsFilter({
-      limit,
-      page,
-      order_by: orderBy,
-      stock_min: stockMin,
-      precio_max: precioMax
-    })
-    res.status(200).json(jewels)
+    const { precio_max, precio_min, categoria, metal } = req.query
+    const joyas = await jewelsDataFilters({ precio_max, precio_min, categoria, metal })
+    res.status(200).json(joyas)
   } catch (error) {
-    res.status(500).json({ message: 'Error al obtener joyas' })
+    res.status(500).json({ message: error.message })
   }
 }
 
-const errorAll = (_, res) => {
-  res.status(404).json({ message: 'Ruta incorrecta' })
-}
-
-export { viewJewels, jewelsHateoasRes, errorAll }
+export { jewelsList, jewelsListFilters }

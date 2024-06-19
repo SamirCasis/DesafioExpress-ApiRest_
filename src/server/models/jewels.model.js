@@ -1,56 +1,46 @@
 import format from 'pg-format'
 import linkDB from '../db/dBLink.js'
 
-const jewelsHateoas = async ({ limit = 2, page = 0, order_by = 'stock_DESC' }) => {
-  const [column, sort] = order_by.split('_')
-  const offset = page * limit
-  const query = format('SELECT * FROM inventario ORDER BY %s %s LIMIT %L OFFSET %L', column, sort, limit, offset)
-  const jewelsData = await linkDB(query)
-  return jewelsData.rows
+const jewelsData = async ({
+  limits = 3,
+  order_by: orderBy = 'stock_DESC',
+  page = 0
+}) => {
+  const [field, direction] = orderBy.split('_')
+  const offSet = (page - 1) * limits
+  const formattedQuery = format('SELECT * FROM inventario ORDER BY %s %s LIMIT %s OFFSET %s;', field, direction, limits, offSet)
+  console.log(formattedQuery)
+  return linkDB(formattedQuery)
 }
 
-const jewelsFilter = ({
-  limit = 2,
-  order_by: orderBy = 'id_asc',
-  page = 0,
-  precio_min: precioMin,
-  precio_max: precioMax,
-  categoria,
-  metal
-}) => {
-  let consulta = 'SELECT * FROM inventario'
-  const filters = []
+const jewelsDataFilters = async ({ precio_max, precio_min, categoria, metal }) => {
+  let filter = []
   const values = []
 
-  if (precioMin) {
-    values.push(precioMin)
-    filters.push(`precio >= $${values.length}`)
+  const addFilter = (campo, comparador, valor) => {
+    values.push(valor)
+    const { length } = filter
+    filter.push(`${campo} ${comparador} $${length + 1}`)
   }
 
-  if (precioMax) {
-    values.push(precioMax)
-    filters.push(`precio <= $${values.length}`)
+  if (precio_max) addFilter('precio', '<=', precio_max)
+  if (precio_min) addFilter('precio', '>=', precio_min)
+  if (categoria) addFilter('categoria', '=', categoria)
+  if (metal) addFilter('metal', '=', metal)
+
+  let consulta = 'SELECT * FROM inventario'
+
+  if (filter.length > 0) {
+    consulta += ` WHERE ${filter.join(' AND ')}`
   }
 
-  if (categoria) {
-    values.push(categoria)
-    filters.push(`categoria = $${values.length}`)
+  try {
+    const joyas = await linkDB(consulta, values)
+    return joyas
+  } catch (error) {
+    console.error('Error fetching joyas:', error)
+    throw error
   }
-
-  if (metal) {
-    values.push(metal)
-    filters.push(`metal = $${values.length}`)
-  }
-
-  if (filters.length > 0) {
-    consulta += ` WHERE ${filters.join(' AND ')}`
-  }
-
-  const [column, sort] = orderBy.split('_')
-  const offset = page * limit
-  const formatConsulta = format(`${consulta} ORDER BY %s %s LIMIT %L OFFSET %L`, column, sort, limit, offset)
-  return linkDB(formatConsulta, values)
 }
 
-export { jewelsFilter, jewelsHateoas }
-
+export { jewelsData, jewelsDataFilters }
